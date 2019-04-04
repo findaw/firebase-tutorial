@@ -36,7 +36,7 @@
         </div>
       </nav>
 
-      <textarea style="height:1000px;" class="textarea" width="100%" rows="1000" placeholder="새로운 메모를 입력해보세요^^"></textarea>
+      <textarea id="memo" style="height:1000px;" class="textarea" width="100%" rows="1000" placeholder="새로운 메모를 입력해보세요^^"></textarea>
     </div>
 
     <div class="fixed-action-btn" style="bottom: 45px; right: 24px;">
@@ -62,11 +62,14 @@
       <script src="https://www.gstatic.com/firebasejs/5.9.2/firebase.js"></script>
 
       <script>
+
+        var textarea = document.getElementById("memo");
         var fb = {
           config : {},
           auth : null,   //firebase auth
           database:null,
           userInfo : null,
+          view : false,
           configInit : function(callback){
             var fileReader = new XMLHttpRequest();
             //read local json file
@@ -100,38 +103,65 @@
           getMemo : function(){
             //해당 사용자의 메모만 가져옴
             var memoRef = this.database.ref("memos/" + this.userInfo.uid);
-            memoRef.on("value", this.onChildAdded);
+            //memoRef.on("value", this.onChildAdded);
+            memoRef.on("child_added", this.onChildAdded.bind(this));
             /*{
                 "text" : "메모 본문",
                 "title": "메모 제목",
                 "updateDate" : "업데이트 날짜",
                 "createDate" : "생성 날짜"
             }*/
-
+            textarea.addEventListener("blur", this.addMemo.bind(this));
           },
           onChildAdded : function(data){
-            var key = "key1";
-            memoData = data.val();
+            var key = data.key;
+            var memoData = data.val();
             var text = memoData.text;
             var title = memoData.title;
             var createDate = memoData.createDate;
             var updateDate = memoData.updateDate;
             //template
             var html =
-               "<li id='"+key+"' class=\"collection-item avatar\" onclick=\"fn_get_data_one(this.id);\" >" +
+               "<li id=\"" + key + "\" class=\"collection-item avatar\" onclick=\"fb.viewMemo(this.id);\">" +
                "<i class=\"material-icons circle red\">" + title + "</i>" +
                "<span class=\"title\">" + title + "</span>" +
                "<p class='txt'>" + text + "<br>" +
                "</p>" +
                "</li>";
+
+             var tmp = document.createElement("div");
+             tmp.innerHTML = html;
+
              var elList = document.getElementsByClassName("collection");
-             elList[0].innerHTML = html;
+             elList[0].appendChild(tmp.firstChild);
           },
-          addText : function
+          addMemo : function(){
+            console.log("blur");
+            var memoRef = this.database.ref("memos/" + this.userInfo.uid);
+            if(textarea.value.trim() === "" || this.view) {
+              return;
+            }
+            memoRef.push({
+                    title : "title",
+                    text : textarea.value,
+                    createDate : new Date().getTime(),
+                    UpdateDate : new Date().getTime()
+            });
+
+          },
+          viewMemo: function(key){
+            var memoRef = this.database.ref("memos/" + this.userInfo.uid + "/" + key).once("value")
+                          .then(function(snapshot){
+                            this.view = true;
+                            textarea.value = snapshot.val().text;
+                          });
+
+          }
+
         }
 
+
         fb.configInit(fb.authProvider.bind(fb));
-        
       </script>
     </body>
   </html>
