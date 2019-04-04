@@ -65,6 +65,8 @@
         var fb = {
           config : {},
           auth : null,   //firebase auth
+          database:null,
+          userInfo : null,
           configInit : function(callback){
             var fileReader = new XMLHttpRequest();
             //read local json file
@@ -75,28 +77,61 @@
               }
             };
             fileReader.send(null);
-          }, //init function
+          },
           authProvider: function(datas){
             this.config = datas;
             //firebase initialize
             firebase.initializeApp(this.config);
             this.auth = firebase.auth();
+            this.database = firebase.database();
             var authProvider = new firebase.auth.GoogleAuthProvider(); //구글 계정제공 api
-
-            //인증에 대한 결과 처리
-            this.auth.onAuthStateChanged(function (user){
+            //제공 결과 처리
+            this.auth.onAuthStateChanged((function (user){
               if(user){
                 //성공
-                console.log(user);
+                this.userInfo = user;
+                this.getMemo();
               }else{
+                //실패
                 this.auth.signInWithPopup(authProvider);
               }
-            });
+            }).bind(this));
           },
+          getMemo : function(){
+            //해당 사용자의 메모만 가져옴
+            var memoRef = this.database.ref("memos/" + this.userInfo.uid);
+            memoRef.on("value", this.onChildAdded);
+            /*{
+                "text" : "메모 본문",
+                "title": "메모 제목",
+                "updateDate" : "업데이트 날짜",
+                "createDate" : "생성 날짜"
+            }*/
+
+          },
+          onChildAdded : function(data){
+            var key = "key1";
+            memoData = data.val();
+            var text = memoData.text;
+            var title = memoData.title;
+            var createDate = memoData.createDate;
+            var updateDate = memoData.updateDate;
+            //template
+            var html =
+               "<li id='"+key+"' class=\"collection-item avatar\" onclick=\"fn_get_data_one(this.id);\" >" +
+               "<i class=\"material-icons circle red\">" + title + "</i>" +
+               "<span class=\"title\">" + title + "</span>" +
+               "<p class='txt'>" + text + "<br>" +
+               "</p>" +
+               "</li>";
+             var elList = document.getElementsByClassName("collection");
+             elList[0].innerHTML = html;
+          },
+          addText : function
         }
 
         fb.configInit(fb.authProvider.bind(fb));
-
+        
       </script>
     </body>
   </html>
