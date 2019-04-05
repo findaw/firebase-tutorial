@@ -2,7 +2,7 @@
   <html>
     <head>
       <!--Import Google Icon Font-->
-      <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
       <!--Import materialize.css-->
       <!-- Compiled and minified CSS -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.8/css/materialize.min.css">
@@ -93,14 +93,14 @@
               if(user){
                 //성공
                 this.userInfo = user;
-                this.getMemo();
+                this.loadMemo();
               }else{
                 //실패
                 this.auth.signInWithPopup(authProvider);
               }
             }).bind(this));
           },
-          getMemo : function(){
+          loadMemo : function(){
             //해당 사용자의 메모만 가져옴
             var memoRef = this.database.ref("memos/" + this.userInfo.uid);
             //firbase는 리얼타임 db라서 변경사항을 바로 알려줌
@@ -162,6 +162,7 @@
                 text : textarea.value,
                 createDate : new Date().getTime(),
               });
+              this.initMemo();
             }
 
           },
@@ -186,6 +187,7 @@
             var target = document.getElementById(key);
             var elList = document.getElementsByClassName("collection");
             elList[0].removeChild(target);
+            this.initMemo();
           },
 
         }
